@@ -1,11 +1,19 @@
+using ytest_api.Services;
+using ytest_api.Authorization;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var services = builder.Services;
+services.AddControllers();
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
+
+
+// configure DI for application services
+services.AddScoped<IUserService, UserService>();
+
 
 var app = builder.Build();
 
@@ -13,13 +21,25 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = string.Empty;
+    });
 }
-
+// configure HTTP request pipeline
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+// global cors policy
+app.UseCors(x => x
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
+// custom basic auth middleware
+app.UseMiddleware<BasicAuthMiddleware>();
 
 app.MapControllers();
-
 app.Run();
+
