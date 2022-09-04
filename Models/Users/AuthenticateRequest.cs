@@ -1,8 +1,8 @@
-namespace ytest_api.Models;
+namespace ytest_api.Models.Users;
 
 using System.ComponentModel.DataAnnotations;
 
-public class AuthenticateModel
+public class AuthenticateRequest
 {
     [Required]
     public string Username { get; set; }

@@ -1,22 +1,45 @@
-using ytest_api.Services;
+using System.Text.Json.Serialization;
 using ytest_api.Authorization;
+using ytest_api.Entities;
+using ytest_api.Helpers;
+using ytest_api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 var services = builder.Services;
-services.AddControllers();
+services.AddDbContext<DataContext>();
+services.AddCors();
+services.AddControllers()
+    .AddJsonOptions(x => x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull); ;
+
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
+// configure strongly typed settings object
+services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
 // configure DI for application services
+services.AddScoped<IJwtUtils, JwtUtils>();
 services.AddScoped<IUserService, UserService>();
-
 
 var app = builder.Build();
 
+// add hardcoded test user to db on startup
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+    var testUser = new User
+    {
+        FirstName = "Test",
+        LastName = "User",
+        Username = "test",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("test")
+    };
+    context.Users.Add(testUser);
+    context.SaveChanges();
+}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -37,8 +60,11 @@ app.UseCors(x => x
     .AllowAnyMethod()
     .AllowAnyHeader());
 
+// global error handler
+app.UseMiddleware<ErrorHandlerMiddleware>();
+
 // custom basic auth middleware
-app.UseMiddleware<BasicAuthMiddleware>();
+app.UseMiddleware<JwtMiddleware>();
 
 app.MapControllers();
 app.Run();

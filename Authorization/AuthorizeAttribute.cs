@@ -21,7 +21,7 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter
             context.Result = new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
 
             // set 'WWW-Authenticate' header to trigger login popup in browsers
-            context.HttpContext.Response.Headers["WWW-Authenticate"] = "Basic realm=\"\", charset=\"UTF-8\"";
+            //context.HttpContext.Response.Headers["WWW-Authenticate"] = "Basic realm=\"\", charset=\"UTF-8\"";
         }
     }
 }
